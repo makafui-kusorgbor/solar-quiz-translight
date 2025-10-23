@@ -52,79 +52,92 @@ export default function Home() {
 
   if (!started) {
     return (
-      <div style={{ padding: 24, fontFamily: 'system-ui, sans-serif' }}>
-        <h1>TransLight Solar Quiz — Local Demo</h1>
-        <p>No backend required. Click start to try a 3‑question mock quiz.</p>
-        <button onClick={start} style={{ padding: '10px 14px' }}>Start demo</button>
-      </div>
+      <main className="section py-16">
+        <div className="grid gap-8 md:grid-cols-2 items-center">
+          <div>
+            <h1 className="h1">TransLight Solar Quiz — Local Demo</h1>
+            <p className="p-muted mt-3">No backend required. Try a quick 3‑question mock quiz or head to the full API-driven flow.</p>
+            <div className="mt-6 flex gap-3">
+              <button onClick={start} className="btn-primary">Start demo</button>
+              <a href="/quiz" className="btn-ghost">Go to full quiz</a>
+            </div>
+          </div>
+          <div className="card p-6">
+            <h2 className="h2">What’s inside</h2>
+            <ul className="mt-3 space-y-2 text-sm text-white/80">
+              <li>• Clean Tailwind theme with brand and accent colors</li>
+              <li>• API integration via Next.js route handlers</li>
+              <li>• Auth + score saving available on the full flow</li>
+            </ul>
+          </div>
+        </div>
+      </main>
     );
   }
 
   if (done) {
     return (
-      <div style={{ padding: 24, fontFamily: 'system-ui, sans-serif' }}>
-        <h1>Results</h1>
-        <p>You scored {score} / {QUESTIONS.length}</p>
-        <button onClick={reset} style={{ padding: '10px 14px' }}>Restart</button>
-        <div style={{ marginTop: 16 }}>
-          {QUESTIONS.map((q, i) => (
-            <div key={i} style={{ marginBottom: 12 }}>
-              <strong>Q{i + 1}:</strong> {q.text}
-              <div>
-                Your answer: {q.options[answers[i]]} {answers[i] === q.correct ? '✓' : '✗'}
+      <main className="section py-16">
+        <div className="card p-6">
+          <h1 className="h1">Results</h1>
+          <p className="mt-2">You scored {score} / {QUESTIONS.length}</p>
+          <button onClick={reset} className="btn-primary mt-4">Restart</button>
+          <div className="mt-6 space-y-3">
+            {QUESTIONS.map((q, i) => (
+              <div key={i} className="border-b border-white/10 pb-3">
+                <strong>Q{i + 1}:</strong> {q.text}
+                <div>
+                  Your answer: {q.options[answers[i]]} {answers[i] === q.correct ? '✓' : '✗'}
+                </div>
+                <div>Correct: {q.options[q.correct]}</div>
               </div>
-              <div>Correct: {q.options[q.correct]}</div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div style={{ padding: 24, fontFamily: 'system-ui, sans-serif' }}>
-      <div style={{ marginBottom: 12 }}>
-        <a href="/quiz" style={{ textDecoration: 'underline' }}>Go to full API-driven quiz →</a>
+    <main className="section py-12">
+      <div className="mb-4">
+        <a href="/quiz" className="underline">Go to full API-driven quiz →</a>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 16 }}>
-        <div style={{ maxWidth: 800 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+      <div className="grid gap-6 md:grid-cols-[1fr_360px]">
+        <div className="card p-6">
+          <div className="flex items-center justify-between mb-3">
             <strong>Question {idx + 1} / {QUESTIONS.length}</strong>
             <span>Score: {score}</span>
           </div>
-          <h2 style={{ marginBottom: 12 }}>{current.text}</h2>
-          <div style={{ display: 'grid', gap: 8 }}>
+          <h2 className="h2 mb-3">{current.text}</h2>
+          <div className="grid gap-2">
             {current.options.map((opt, i) => {
               const isChosen = chosen === i;
               return (
                 <button
                   key={i}
                   onClick={() => choose(i)}
-                  style={{
-                    textAlign: 'left', padding: '10px 12px', borderRadius: 8,
-                    border: '1px solid #ccc', background: isChosen ? '#e6f0ff' : 'white'
-                  }}
+                  className={`text-left rounded-lg border px-3 py-2 ${isChosen ? 'bg-white/10' : 'bg-white/5'} border-white/10`}
                 >
                   {opt}
                 </button>
               );
             })}
           </div>
-          <div style={{ marginTop: 12 }}>
-            <button onClick={next} disabled={chosen == null} style={{ padding: '10px 14px' }}>
+          <div className="mt-4">
+            <button onClick={next} disabled={chosen == null} className="btn-primary disabled:opacity-50">
               {idx + 1 === QUESTIONS.length ? 'Finish' : 'Next'}
             </button>
           </div>
         </div>
 
-        <aside style={{ border: '1px solid #e5e5e5', borderRadius: 8, padding: 12 }}>
-          <h3 style={{ marginTop: 0 }}>Backend test</h3>
-          <p style={{ marginTop: 0 }}>Calls Next.js proxy → FastAPI</p>
+        <aside className="card p-6">
+          <h3 className="h2">Backend test</h3>
+          <p className="p-muted mt-1">Calls Next.js proxy → FastAPI</p>
 
-          <div style={{ display: 'grid', gap: 8 }}>
+          <div className="grid gap-2 mt-3">
             <button
               onClick={async () => {
-                // Start quiz
                 setBackendLoading(true); setBackendError(null);
                 try {
                   const res = await fetch('/api/quiz/start', { method: 'POST', body: JSON.stringify({}) });
@@ -138,7 +151,7 @@ export default function Home() {
                 }
               }}
               disabled={backendLoading}
-              style={{ padding: '8px 12px' }}
+              className="btn-primary"
             >Start API quiz</button>
 
             <button
@@ -159,7 +172,7 @@ export default function Home() {
                 }
               }}
               disabled={backendLoading}
-              style={{ padding: '8px 12px' }}
+              className="btn-ghost"
             >Get questions (section 1)</button>
 
             <button
@@ -180,16 +193,16 @@ export default function Home() {
                 }
               }}
               disabled={backendLoading}
-              style={{ padding: '8px 12px' }}
+              className="btn-ghost"
             >Submit sample answer</button>
           </div>
 
-          {backendError && <p style={{ color: 'crimson' }}>Error: {backendError}</p>}
-          <pre style={{ marginTop: 12, background: '#f6f6f6', padding: 8, maxHeight: 300, overflow: 'auto' }}>
+          {backendError && <p className="text-red-300 mt-2">Error: {backendError}</p>}
+          <pre className="mt-3 max-h-[300px] overflow-auto rounded-md bg-black/20 p-3 text-xs">
             {backendData ? JSON.stringify(backendData, null, 2) : 'No data yet'}
           </pre>
         </aside>
       </div>
-    </div>
+    </main>
   );
 }

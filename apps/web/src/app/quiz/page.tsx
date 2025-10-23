@@ -37,16 +37,16 @@ function AuthPanel({ onAuth }: { onAuth: (email: string) => void }) {
   };
 
   return (
-    <div style={{ border: '1px solid #e5e5e5', borderRadius: 8, padding: 12, maxWidth: 420 }}>
-      <h3 style={{ marginTop: 0 }}>Account</h3>
-      <div style={{ display: 'grid', gap: 8 }}>
-        <input placeholder="email" value={email} onChange={e => setEmail(e.target.value)} style={{ padding: 8 }} />
-        <input placeholder="password" type="password" value={password} onChange={e => setPassword(e.target.value)} style={{ padding: 8 }} />
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={() => { setMode('login'); submit(); }} style={{ padding: '8px 12px' }}>Login</button>
-          <button onClick={() => { setMode('signup'); submit(); }} style={{ padding: '8px 12px' }}>Sign up</button>
+    <div className="card p-4">
+      <h3 className="h2">Account</h3>
+      <div className="mt-3 grid gap-2">
+        <input placeholder="email" value={email} onChange={e => setEmail(e.target.value)} className="rounded-md bg-white/10 px-3 py-2 outline-none" />
+        <input placeholder="password" type="password" value={password} onChange={e => setPassword(e.target.value)} className="rounded-md bg-white/10 px-3 py-2 outline-none" />
+        <div className="flex gap-2">
+          <button onClick={() => { setMode('login'); submit(); }} className="btn-primary">Login</button>
+          <button onClick={() => { setMode('signup'); submit(); }} className="btn-ghost">Sign up</button>
         </div>
-        {msg && <p>{msg}</p>}
+        {msg && <p className="text-sm p-muted">{msg}</p>}
       </div>
     </div>
   );
@@ -147,60 +147,62 @@ export default function ApiQuizPage() {
   };
 
   return (
-    <div style={{ padding: 24, fontFamily: 'system-ui, sans-serif', maxWidth: 900, margin: '0 auto' }}>
-      <h1 style={{ marginBottom: 8 }}>TransLight Solar Quiz — API</h1>
-      <p style={{ marginTop: 0 }}>This flow uses the FastAPI backend via Next.js API routes.</p>
+    <main className="section py-12">
+      <h1 className="h1 mb-1">TransLight Solar Quiz — API</h1>
+      <p className="p-muted">This flow uses the FastAPI backend via Next.js API routes.</p>
 
       {/* Auth panel */}
       {!auth && (
-        <AuthPanel onAuth={(email) => setAuth({ email })} />
+        <div className="mt-4 max-w-md">
+          <AuthPanel onAuth={(email) => setAuth({ email })} />
+        </div>
       )}
 
       {!started && (
-        <div style={{ marginTop: 16 }}>
-          <button onClick={startQuiz} disabled={loading || !auth} style={{ padding: '10px 14px' }}>
+        <div className="mt-4">
+          <button onClick={startQuiz} disabled={loading || !auth} className="btn-primary disabled:opacity-50">
             {loading ? 'Starting…' : auth ? 'Start quiz' : 'Login to start'}
           </button>
-          {error && <p style={{ color: 'crimson' }}>Error: {error}</p>}
+          {error && <p className="text-red-300 mt-2">Error: {error}</p>}
         </div>
       )}
 
       {started && !done && (
-        <div style={{ marginTop: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <div className="mt-6 card p-6">
+          <div className="flex items-center justify-between">
             <div>Section: <strong>{currentSection}</strong></div>
             <div>Score: {score}</div>
           </div>
 
           {currentQ ? (
-            <div style={{ marginTop: 12 }}>
-              <h2 style={{ marginBottom: 8 }}>Q{qIdx + 1}. {currentQ.question_text}</h2>
-              <div style={{ display: 'grid', gap: 8 }}>
+            <div className="mt-4">
+              <h2 className="h2 mb-2">Q{qIdx + 1}. {currentQ.question_text}</h2>
+              <div className="grid gap-2">
                 {currentQ.options.map((opt, i) => (
                   <button key={i} onClick={() => answer(i)} disabled={loading}
-                    style={{ textAlign: 'left', padding: '10px 12px', borderRadius: 8, border: '1px solid #ccc' }}>
+                    className="text-left rounded-lg border border-white/10 bg-white/5 px-3 py-2">
                     {opt}
                   </button>
                 ))}
               </div>
-              {error && <p style={{ color: 'crimson' }}>Error: {error}</p>}
+              {error && <p className="text-red-300 mt-2">Error: {error}</p>}
             </div>
           ) : (
-            <p style={{ marginTop: 12 }}>Loading questions…</p>
+            <p className="mt-3">Loading questions…</p>
           )}
         </div>
       )}
 
       {done && (
-        <div style={{ marginTop: 24 }}>
-          <h2>Finished</h2>
-          <p>Final score: {score}</p>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={async () => { await finish(); }} style={{ padding: '10px 14px' }}>Save score</button>
-            <button onClick={reset} style={{ padding: '10px 14px' }}>Restart</button>
+        <div className="mt-6 card p-6">
+          <h2 className="h2">Finished</h2>
+          <p className="mt-1">Final score: {score}</p>
+          <div className="mt-3 flex gap-2">
+            <button onClick={async () => { await finish(); }} className="btn-primary">Save score</button>
+            <button onClick={reset} className="btn-ghost">Restart</button>
           </div>
         </div>
       )}
-    </div>
+    </main>
   );
 }
