@@ -1,0 +1,206 @@
+'use client';
+import { useEffect, useMemo, useState } from 'react';
+
+type Section = string;
+
+type ApiStart = {
+  quizId: string;
+  sectionSeq: Section[];
+  state: string;
+  difficultyTier: number;
+};
+
+type ApiQuestion = {
+  question_text: string;
+  options: string[];
+  correct_index: number;
+  concept_tags?: string[];
+  difficulty_rating?: number;
+};
+
+type ApiQuestions = { questions: ApiQuestion[] };
+
+function AuthPanel({ onAuth }: { onAuth: (email: string) => void }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [mode, setMode] = useState<'login'|'signup'>('login');
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const submit = async () => {
+    setMsg(null);
+    const path = mode === 'login' ? '/api/auth/login' : '/api/auth/signup';
+    const res = await fetch(path, { method: 'POST', body: JSON.stringify({ email, password }) });
+    if (!res.ok) { setMsg('Failed'); return; }
+    const data = await res.json();
+    if (mode === 'login' && data?.token) onAuth(email);
+    else if (mode === 'signup') setMsg('Account created, switch to login');
+  };
+
+  return (
+    <div style={{ border: '1px solid #e5e5e5', borderRadius: 8, padding: 12, maxWidth: 420 }}>
+      <h3 style={{ marginTop: 0 }}>Account</h3>
+      <div style={{ display: 'grid', gap: 8 }}>
+        <input placeholder="email" value={email} onChange={e => setEmail(e.target.value)} style={{ padding: 8 }} />
+        <input placeholder="password" type="password" value={password} onChange={e => setPassword(e.target.value)} style={{ padding: 8 }} />
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => { setMode('login'); submit(); }} style={{ padding: '8px 12px' }}>Login</button>
+          <button onClick={() => { setMode('signup'); submit(); }} style={{ padding: '8px 12px' }}>Sign up</button>
+        </div>
+        {msg && <p>{msg}</p>}
+      </div>
+    </div>
+  );
+}
+
+export default function ApiQuizPage() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [started, setStarted] = useState(false);
+  const [quizId, setQuizId] = useState<string | null>(null);
+  const [seq, setSeq] = useState<Section[]>([]);
+  const [secIdx, setSecIdx] = useState(0);
+
+  const [questions, setQuestions] = useState<ApiQuestion[]>([]);
+  const [qIdx, setQIdx] = useState(0);
+  const [score, setScore] = useState(0);
+
+  const currentSection = seq[secIdx];
+  const currentQ = questions[qIdx];
+  const done = started && secIdx >= seq.length;
+  const [auth, setAuth] = useState<{ email: string } | null>(null);
+
+  const startQuiz = async () => {
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch('/api/quiz/start', { method: 'POST', body: JSON.stringify({}) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data: ApiStart = await res.json();
+      setQuizId(data.quizId);
+      setSeq(data.sectionSeq);
+      setSecIdx(0);
+      setScore(0);
+      setStarted(true);
+    } catch (e: any) {
+      setError(e?.message ?? 'Failed to start quiz');
+    } finally { setLoading(false); }
+  };
+
+  const loadSection = async (section: Section) => {
+    if (!quizId) return;
+    setLoading(true); setError(null);
+    try {
+      const res = await fetch(`/api/quiz/${quizId}/section/${section}/questions`, { method: 'POST', body: JSON.stringify({}) });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data: ApiQuestions = await res.json();
+      setQuestions(data.questions ?? []);
+      setQIdx(0);
+    } catch (e: any) {
+      setError(e?.message ?? 'Failed to load questions');
+    } finally { setLoading(false); }
+  };
+
+  useEffect(() => {
+    if (started && secIdx < seq.length) {
+      loadSection(seq[secIdx]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [started, secIdx]);
+
+  const answer = async (choice: number) => {
+    if (!quizId || !currentQ) return;
+    setLoading(true); setError(null);
+    try {
+      await fetch('/api/quiz/response', {
+        method: 'POST',
+        body: JSON.stringify({
+          quizId,
+          questionIdx: qIdx,
+          questionText: currentQ.question_text,
+          questionHash: `${currentSection}-${qIdx}`,
+          chosenIdx: choice,
+          correctIdx: currentQ.correct_index,
+          timeRemaining: 0,
+        }),
+      });
+      if (choice === currentQ.correct_index) setScore((s) => s + 1);
+      const nextQ = qIdx + 1;
+      if (nextQ < questions.length) {
+        setQIdx(nextQ);
+      } else {
+        // next section
+        const nextSec = secIdx + 1;
+        setSecIdx(nextSec);
+      }
+    } catch (e: any) {
+      setError(e?.message ?? 'Failed to submit answer');
+    } finally { setLoading(false); }
+  };
+
+  const reset = () => {
+    setStarted(false); setQuizId(null); setSeq([]); setSecIdx(0); setQuestions([]); setQIdx(0); setScore(0); setError(null);
+  };
+
+  const finish = async () => {
+    if (!quizId) return;
+    await fetch('/api/quiz/finish', { method: 'POST', body: JSON.stringify({ quizId, correct: score, total: seq.length * (questions.length || 3) }) });
+  };
+
+  return (
+    <div style={{ padding: 24, fontFamily: 'system-ui, sans-serif', maxWidth: 900, margin: '0 auto' }}>
+      <h1 style={{ marginBottom: 8 }}>TransLight Solar Quiz — API</h1>
+      <p style={{ marginTop: 0 }}>This flow uses the FastAPI backend via Next.js API routes.</p>
+
+      {/* Auth panel */}
+      {!auth && (
+        <AuthPanel onAuth={(email) => setAuth({ email })} />
+      )}
+
+      {!started && (
+        <div style={{ marginTop: 16 }}>
+          <button onClick={startQuiz} disabled={loading || !auth} style={{ padding: '10px 14px' }}>
+            {loading ? 'Starting…' : auth ? 'Start quiz' : 'Login to start'}
+          </button>
+          {error && <p style={{ color: 'crimson' }}>Error: {error}</p>}
+        </div>
+      )}
+
+      {started && !done && (
+        <div style={{ marginTop: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div>Section: <strong>{currentSection}</strong></div>
+            <div>Score: {score}</div>
+          </div>
+
+          {currentQ ? (
+            <div style={{ marginTop: 12 }}>
+              <h2 style={{ marginBottom: 8 }}>Q{qIdx + 1}. {currentQ.question_text}</h2>
+              <div style={{ display: 'grid', gap: 8 }}>
+                {currentQ.options.map((opt, i) => (
+                  <button key={i} onClick={() => answer(i)} disabled={loading}
+                    style={{ textAlign: 'left', padding: '10px 12px', borderRadius: 8, border: '1px solid #ccc' }}>
+                    {opt}
+                  </button>
+                ))}
+              </div>
+              {error && <p style={{ color: 'crimson' }}>Error: {error}</p>}
+            </div>
+          ) : (
+            <p style={{ marginTop: 12 }}>Loading questions…</p>
+          )}
+        </div>
+      )}
+
+      {done && (
+        <div style={{ marginTop: 24 }}>
+          <h2>Finished</h2>
+          <p>Final score: {score}</p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={async () => { await finish(); }} style={{ padding: '10px 14px' }}>Save score</button>
+            <button onClick={reset} style={{ padding: '10px 14px' }}>Restart</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
