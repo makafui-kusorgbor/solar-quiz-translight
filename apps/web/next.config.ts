@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: __dirname,
   turbopack: {
     // Pin the project root to avoid incorrect workspace root inference on Windows.
     root: __dirname,
