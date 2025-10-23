@@ -1,16 +1,14 @@
 import { NextResponse } from "next/server";
+import { getDB } from "../../db";
 
-const API_BASE = process.env.API_BASE_URL ?? "http://127.0.0.1:8000";
+export const runtime = "nodejs";
 
 export async function POST(req: Request) {
-  const url = new URL("/auth/login", API_BASE).toString();
-  const res = await fetch(url, { method: "POST", body: await req.text(), headers: { "content-type": "application/json" }, cache: "no-store" });
-  const data = await res.json().catch(() => ({}));
-
-  const resp = NextResponse.json(data, { status: res.status });
-  if (res.ok && data?.token) {
-    // Set session cookie for the same-site app
-    resp.cookies.set('session', data.token, { httpOnly: true, sameSite: 'lax', path: '/' });
-  }
+  const { email, password } = await req.json();
+  const db = getDB();
+  const token = db.login(email, password);
+  if (!token) return NextResponse.json({ error: "Invalid" }, { status: 401 });
+  const resp = NextResponse.json({ token, email, userId: db.userIdFromSession(token) });
+  resp.cookies.set("session", token, { httpOnly: true, sameSite: "lax", path: "/" });
   return resp;
 }

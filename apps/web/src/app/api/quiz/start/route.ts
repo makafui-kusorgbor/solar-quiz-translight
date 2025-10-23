@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-import { withSessionHeaders } from "../../_utils";
+import { getDB } from "../../../db";
 
-const API_BASE = process.env.API_BASE_URL ?? "http://127.0.0.1:8000";
+export const runtime = "nodejs";
 
 export async function POST(req: Request) {
-  const url = new URL("/quiz/start", API_BASE).toString();
-  const res = await fetch(url, { method: "POST", body: await req.text(), headers: withSessionHeaders(req), cache: "no-store" });
-  const data = await res.json().catch(() => ({}));
-  return NextResponse.json(data, { status: res.status });
+  const db = getDB();
+  const data = db.quizStart();
+  return NextResponse.json(data);
 }
