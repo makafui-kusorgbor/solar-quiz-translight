@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDB } from "../../../../db";
+import { getDB } from "../../../../../db";
 
 type Params = { params: { quizId: string; section: string } };
 export const runtime = "nodejs";
